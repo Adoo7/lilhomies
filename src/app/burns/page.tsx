@@ -27,31 +27,6 @@ const BurnsPage: React.FC = () => {
     const [data, setData] = useState<NamePhrase[]>([]);
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
-    const addPhrase = async (userId: string, phrase: string) => {
-        try {
-            const response = await fetch('/api/burns', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ user_id: userId, phrase }),
-            });
-
-            if (!response.ok) {
-                throw new Error('Network response was not ok');
-            }
-
-            const newPhrase = await response.json();
-
-            fetchData();
-
-            setData((prevData) => [...prevData, newPhrase]);
-        } catch (error) {
-            setError((error as Error).message);
-        }
-
-
-    };
     useEffect(() => {
         fetchData();
     }, []);
