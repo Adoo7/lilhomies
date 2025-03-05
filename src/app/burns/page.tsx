@@ -52,7 +52,7 @@ const BurnsPage: React.FC = () => {
                 }
                 return acc;
             }, [] as { user_id: string; phrases: string[] }[]).map((user, index) => (
-                <li key={index} style={{ border: '1px solid blue', padding: '10px', marginBottom: '10px', width: '100%' }}>
+                <li key={index} style={{ border: '1px solid blue', borderRadius: '4px', padding: '10px', marginBottom: '10px', width: '100%' }}>
                 <div>
                     <h2 style={{ fontSize: '1.5em', padding: '12px' }}>{user.user_id}</h2>
                     <ul>
