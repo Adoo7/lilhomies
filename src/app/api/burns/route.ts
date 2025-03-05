@@ -3,7 +3,13 @@ import { sql } from '@vercel/postgres';
 
 export async function GET() {
   try {
-    const { rows, fields } = await sql`select * from lilhomies_burns`
+    const { rows, fields } = await sql` SELECT * FROM lilhomies_burns
+                                        ORDER BY 
+                                            CASE 
+                                                WHEN POSITION('-----' IN phrase) > 0 THEN 0
+                                                ELSE 1
+                                            END,
+                                            POSITION('-----' IN phrase)`
     return NextResponse.json({ rows, fields });
   } catch (error) {
     console.log('error: ', error)
