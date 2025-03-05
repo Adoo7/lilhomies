@@ -85,17 +85,6 @@ const BurnsPage: React.FC = () => {
                         <li key={phraseIndex} style={{ backgroundColor: 'rgba(255, 255, 255, 0.1)', padding: '5px', marginBottom: '5px' }}>{phrase}</li>
                     ))}
                     </ul>
-                    <form
-                    onSubmit={async (e) => {
-                        e.preventDefault();
-                        const formData = new FormData(e.target as HTMLFormElement);
-                        const phrase = formData.get('phrase') as string;
-                        await addPhrase(user.user_id, phrase);
-                    }}
-                    >
-                    <input type="text" name="phrase" placeholder="Add a new phrase" required />
-                    <button type="submit">Add Phrase</button>
-                    </form>
                 </div>
                 </li>
             ))}
