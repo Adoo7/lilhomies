@@ -54,10 +54,10 @@ const BurnsPage: React.FC = () => {
             }, [] as { user_id: string; phrases: string[] }[]).map((user, index) => (
                 <li key={index} style={{ border: '1px solid blue', borderRadius: '4px', padding: '10px', marginBottom: '10px', width: '100%' }}>
                 <div>
-                    <h2 style={{ fontSize: '1.5em', padding: '12px' }}>{user.user_id}</h2>
+                    <h2 style={{ fontSize: '1.5em', padding: '12px', textAlign: 'center' }}>{user.user_id}</h2>
                     <ul>
                     {user.phrases.map((phrase, phraseIndex) => (
-                        <li key={phraseIndex} style={{ backgroundColor: 'rgba(255, 255, 255, 0.1)', padding: '5px', marginBottom: '5px' }}>{phrase}</li>
+                        <li key={phraseIndex} style={{ backgroundColor: 'rgba(255, 255, 255, 0.1)', padding: '5px', marginBottom: '5px', textAlign: 'right' }}>{phrase}</li>
                     ))}
                     </ul>
                 </div>
