@@ -9,6 +9,61 @@ interface NamePhrase {
 
 const BurnsPage: React.FC = () => {
 
+    const showPopup = ({ text, showDisagree }: { text: string; showDisagree: boolean }) => {
+        return new Promise<boolean>((resolve) => {
+            const background = document.createElement('div');
+            background.style.position = 'fixed';
+            background.style.top = '0';
+            background.style.left = '0';
+            background.style.width = '100%';
+            background.style.height = '100%';
+            background.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
+            background.style.zIndex = '999';
+            document.body.appendChild(background);
+
+            const popup = document.createElement('div');
+            popup.style.position = 'fixed';
+            popup.style.top = '50%';
+            popup.style.left = '50%';
+            popup.style.width = '400px';
+            popup.style.maxWidth = '90%';
+            popup.style.borderRadius = '10px';
+            popup.style.textAlign = 'right';
+
+            popup.style.transform = 'translate(-50%, -50%)';
+            popup.style.backgroundColor = 'white';
+            popup.style.padding = '20px';
+            popup.style.boxShadow = '0 0 10px rgba(0, 0, 0, 0.1)';
+            popup.style.zIndex = '1000';
+            popup.style.color = 'black';
+
+            popup.innerHTML = `
+                <p style="font-size: 3rem;">${text}</p>
+                <div style="display: flex; justify-content: flex-start; gap: 10px; margin-top: 20px;">
+                    <button id="agreeButton" style="padding: 10px 20px; background-color: green; color: white; border: none; border-radius: 5px; cursor: pointer;">${showDisagree ? "اتفق" : "اتفق وبشدة"}</button>
+                    ${showDisagree ? '<button id="disagreeButton" style="margin-right: 10px; padding: 10px 20px; background-color: red; color: white; border: none; border-radius: 5px; cursor: pointer;">لا اتفق</button>' : ''}
+                </div>
+            `;
+
+            document.body.appendChild(popup);
+
+            const agreeButton = document.getElementById('agreeButton');
+            const disagreeButton = document.getElementById('disagreeButton');
+
+            agreeButton?.addEventListener('click', () => {
+                document.body.removeChild(popup);
+                document.body.removeChild(background);
+                resolve(true);
+            });
+            
+            disagreeButton?.addEventListener('click', () => {
+                document.body.removeChild(popup);
+                document.body.removeChild(background);
+                resolve(false);
+            });
+        });
+    };
+
     const fetchData = async () => {
         try {
             const response = await fetch('/api/burns');
