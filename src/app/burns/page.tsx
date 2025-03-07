@@ -83,6 +83,11 @@ const BurnsPage: React.FC = () => {
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
     useEffect(() => {
+        showPopup({ text: "حسن قي", showDisagree: true }).then((result) => {
+            if (!result) {
+                showPopup({ text: "حسن قي", showDisagree: false });
+            }
+        });
         fetchData();
     }, []);
 
