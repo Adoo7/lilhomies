@@ -19,17 +19,30 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
-    const { user_id, phrase } = await request.json();
+    const body = await request.json();
+    const { user_id } = body;
 
-    // Validate the input
-    if (!user_id || !phrase) {
-      return NextResponse.json({ error: 'user_id and phrase are required' }, { status: 400 });
+    // Support both single phrase and bulk phrases array
+    const phrases: string[] = Array.isArray(body.phrases)
+      ? body.phrases
+      : body.phrase
+        ? [body.phrase]
+        : [];
+
+    if (!user_id || phrases.length === 0) {
+      return NextResponse.json({ error: 'user_id and phrase(s) are required' }, { status: 400 });
     }
 
-    const query = `INSERT INTO lilhomies_burns (user_id, phrase) VALUES ($1, $2)`;
-    await sql.query(query, [user_id, phrase]);
+    for (const phrase of phrases) {
+      if (phrase.trim()) {
+        await sql.query(
+          `INSERT INTO lilhomies_burns (user_id, phrase) VALUES ($1, $2)`,
+          [user_id, phrase.trim()]
+        );
+      }
+    }
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true, inserted: phrases.filter(p => p.trim()).length });
   } catch (error) {
     console.log('error: ', error);
     return NextResponse.error();
