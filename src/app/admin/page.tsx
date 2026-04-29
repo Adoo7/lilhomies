@@ -3,15 +3,13 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 
-const ADMIN_PASSWORD = 'hassan_is_gay';
-
 interface BurnRow {
   user_id: string;
   phrase: string;
 }
 
 export default function AdminPage() {
-  const [authenticated, setAuthenticated] = useState(false);
+  const [authenticated, setAuthenticated] = useState<boolean | null>(null); // null = loading
   const [passwordInput, setPasswordInput] = useState('');
   const [passwordError, setPasswordError] = useState('');
 
@@ -30,14 +28,37 @@ export default function AdminPage() {
   const [deleteStatus, setDeleteStatus] = useState<{ type: 'success' | 'error'; msg: string } | null>(null);
   const [deleting, setDeleting] = useState(false);
 
-  const handleLogin = (e: React.FormEvent) => {
+  // Check existing session on mount
+  useEffect(() => {
+    fetch('/api/admin')
+      .then((r) => r.json())
+      .then((j) => setAuthenticated(j.authenticated === true))
+      .catch(() => setAuthenticated(false));
+  }, []);
+
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (passwordInput === ADMIN_PASSWORD) {
-      setAuthenticated(true);
-      setPasswordError('');
-    } else {
-      setPasswordError('كلمة المرور خاطئة');
+    setPasswordError('');
+    try {
+      const res = await fetch('/api/admin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password: passwordInput }),
+      });
+      if (res.ok) {
+        setAuthenticated(true);
+        setPasswordInput('');
+      } else {
+        setPasswordError('كلمة المرور خاطئة');
+      }
+    } catch {
+      setPasswordError('حدث خطأ، حاول مرة أخرى');
     }
+  };
+
+  const handleLogout = async () => {
+    await fetch('/api/admin', { method: 'DELETE' });
+    setAuthenticated(false);
   };
 
   const fetchData = async () => {
@@ -120,6 +141,15 @@ export default function AdminPage() {
     }
   };
 
+  /* ─── Loading session ─── */
+  if (authenticated === null) {
+    return (
+      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--background)' }}>
+        <p style={{ color: 'var(--muted)' }}>جاري التحقق...</p>
+      </div>
+    );
+  }
+
   /* ─── Password gate ─── */
   if (!authenticated) {
     return (
@@ -188,7 +218,9 @@ export default function AdminPage() {
             background: 'linear-gradient(135deg, #7c3aed, #a855f7)',
             WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
           }}>🔧 لوحة التحكم</h1>
-          <span style={{ color: 'var(--muted)', fontSize: '0.85rem' }}>{data.length} سجل</span>
+          <button className="btn btn-danger" onClick={handleLogout} style={{ padding: '6px 14px', fontSize: '0.8rem' }}>
+            تسجيل الخروج
+          </button>
         </div>
 
         {/* Bulk Insert */}
