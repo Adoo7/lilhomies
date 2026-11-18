@@ -6,6 +6,7 @@ import Link from 'next/link';
 interface NamePhrase {
     user_id: string;
     phrase: string;
+    year: number | null;
 }
 
 const AVATAR_COLORS = [
@@ -41,10 +42,10 @@ const BurnsPage: React.FC = () => {
 
     const grouped = data.reduce((acc, item) => {
         const existing = acc.find((u) => u.user_id === item.user_id);
-        if (existing) existing.phrases.push(item.phrase);
-        else acc.push({ user_id: item.user_id, phrases: [item.phrase] });
+        if (existing) existing.phrases.push(item);
+        else acc.push({ user_id: item.user_id, phrases: [item] });
         return acc;
-    }, [] as { user_id: string; phrases: string[] }[]);
+    }, [] as { user_id: string; phrases: NamePhrase[] }[]);
 
     /* ─── Agree gate ─── */
     if (agreed === null) {
@@ -131,21 +132,41 @@ const BurnsPage: React.FC = () => {
                                         {user.phrases.length} تحريقة
                                     </span>
                                 </div>
-                                <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                                    {user.phrases.map((phrase, pi) => (
-                                        <li key={pi} style={{
-                                            background: 'var(--surface2)',
-                                            borderRadius: '8px',
-                                            padding: '10px 14px',
-                                            direction: 'rtl',
-                                            fontSize: '0.95rem',
-                                            borderRight: `3px solid ${color}`,
-                                            color: 'var(--foreground)',
-                                        }}>
-                                            {phrase}
-                                        </li>
+                                {Object.entries(user.phrases.reduce((years, item) => {
+                                    const category = item.year === null ? 'غير مصنفة' : String(item.year);
+                                    years[category] ??= [];
+                                    years[category].push(item.phrase);
+                                    return years;
+                                }, {} as Record<string, string[]>))
+                                    .sort(([left], [right]) => left === 'غير مصنفة' ? 1 : right === 'غير مصنفة' ? -1 : Number(right) - Number(left))
+                                    .map(([year, phrases]) => (
+                                        <section key={year} style={{ marginTop: '0.8rem' }}>
+                                            <h3 style={{
+                                                color: 'var(--muted)',
+                                                fontSize: '0.85rem',
+                                                fontWeight: 700,
+                                                margin: '0 0 0.5rem',
+                                                direction: 'rtl',
+                                            }}>
+                                                {year}
+                                            </h3>
+                                            <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                                {phrases.map((phrase, pi) => (
+                                                    <li key={pi} style={{
+                                                        background: 'var(--surface2)',
+                                                        borderRadius: '8px',
+                                                        padding: '10px 14px',
+                                                        direction: 'rtl',
+                                                        fontSize: '0.95rem',
+                                                        borderRight: `3px solid ${color}`,
+                                                        color: 'var(--foreground)',
+                                                    }}>
+                                                        {phrase}
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        </section>
                                     ))}
-                                </ul>
                             </div>
                         );
                     })}

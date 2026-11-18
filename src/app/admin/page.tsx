@@ -6,6 +6,12 @@ import Link from 'next/link';
 interface BurnRow {
   user_id: string;
   phrase: string;
+  year: number | null;
+}
+
+interface PhraseDraft {
+  phrase: string;
+  year: string;
 }
 
 export default function AdminPage() {
@@ -19,7 +25,7 @@ export default function AdminPage() {
 
   // Bulk insert form state
   const [insertUserId, setInsertUserId] = useState('');
-  const [insertPhrases, setInsertPhrases] = useState('');
+  const [phraseDrafts, setPhraseDrafts] = useState<PhraseDraft[]>([{ phrase: '', year: '' }]);
   const [insertStatus, setInsertStatus] = useState<{ type: 'success' | 'error'; msg: string } | null>(null);
   const [inserting, setInserting] = useState(false);
 
@@ -82,10 +88,9 @@ export default function AdminPage() {
 
   const handleBulkInsert = async (e: React.FormEvent) => {
     e.preventDefault();
-    const phrases = insertPhrases
-      .split('\n')
-      .map((p) => p.trim())
-      .filter(Boolean);
+    const phrases = phraseDrafts
+      .map(({ phrase, year }) => ({ phrase: phrase.trim(), year: Number(year) }))
+      .filter(({ phrase }) => phrase);
 
     if (!insertUserId.trim()) {
       setInsertStatus({ type: 'error', msg: 'أدخل اسم المستخدم' });
@@ -93,6 +98,10 @@ export default function AdminPage() {
     }
     if (phrases.length === 0) {
       setInsertStatus({ type: 'error', msg: 'أدخل تحريقة واحدة على الأقل' });
+      return;
+    }
+    if (phrases.some(({ year }) => !Number.isInteger(year) || year < 1 || year > 9999)) {
+      setInsertStatus({ type: 'error', msg: 'أدخل سنة صحيحة لكل تحريقة' });
       return;
     }
 
@@ -107,7 +116,7 @@ export default function AdminPage() {
       if (!res.ok) throw new Error('فشل الإضافة');
       const json = await res.json();
       setInsertStatus({ type: 'success', msg: `تم إضافة ${json.inserted} تحريقة بنجاح ✅` });
-      setInsertPhrases('');
+      setPhraseDrafts([{ phrase: '', year: '' }]);
       await fetchData();
     } catch (err) {
       setInsertStatus({ type: 'error', msg: (err as Error).message });
@@ -199,10 +208,10 @@ export default function AdminPage() {
   /* ─── Admin dashboard ─── */
   const grouped = data.reduce((acc, item) => {
     const ex = acc.find((u) => u.user_id === item.user_id);
-    if (ex) ex.phrases.push(item.phrase);
-    else acc.push({ user_id: item.user_id, phrases: [item.phrase] });
+    if (ex) ex.phrases.push(item);
+    else acc.push({ user_id: item.user_id, phrases: [item] });
     return acc;
-  }, [] as { user_id: string; phrases: string[] }[]);
+  }, [] as { user_id: string; phrases: BurnRow[] }[]);
 
   const users = [...new Set(data.map((r) => r.user_id))];
 
@@ -245,16 +254,55 @@ export default function AdminPage() {
                 {users.map((u) => <option key={u} value={u} />)}
               </datalist>
             </div>
-            <div>
-              <label style={{ display: 'block', color: 'var(--muted)', fontSize: '0.85rem', marginBottom: '4px', direction: 'rtl' }}>
-                التحريقات (كل سطر = تحريقة واحدة)
-              </label>
-              <textarea
-                placeholder={'تحريقة أولى\nتحريقة ثانية\nتحريقة ثالثة'}
-                value={insertPhrases}
-                onChange={(e) => setInsertPhrases(e.target.value)}
-                style={{ direction: 'rtl', minHeight: '130px' }}
-              />
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
+              <span style={{ color: 'var(--muted)', fontSize: '0.85rem', direction: 'rtl' }}>
+                أضف تحريقة وحدد سنتها
+              </span>
+              {phraseDrafts.map((draft, index) => (
+                <div key={index} style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
+                  <input
+                    type="text"
+                    placeholder={`التحريقة ${index + 1}`}
+                    value={draft.phrase}
+                    onChange={(e) => setPhraseDrafts((current) => current.map((item, i) =>
+                      i === index ? { ...item, phrase: e.target.value } : item
+                    ))}
+                    style={{ flex: '1 1 240px', direction: 'rtl' }}
+                  />
+                  <input
+                    type="number"
+                    min="1"
+                    max="9999"
+                    step="1"
+                    aria-label={`سنة التحريقة ${index + 1}`}
+                    placeholder="السنة"
+                    value={draft.year}
+                    onChange={(e) => setPhraseDrafts((current) => current.map((item, i) =>
+                      i === index ? { ...item, year: e.target.value } : item
+                    ))}
+                    style={{ flex: '0 1 130px', direction: 'ltr' }}
+                  />
+                  {phraseDrafts.length > 1 && (
+                    <button
+                      type="button"
+                      className="btn btn-danger"
+                      aria-label={`حذف التحريقة ${index + 1}`}
+                      onClick={() => setPhraseDrafts((current) => current.filter((_, i) => i !== index))}
+                      style={{ padding: '8px 12px' }}
+                    >
+                      حذف
+                    </button>
+                  )}
+                </div>
+              ))}
+              <button
+                type="button"
+                className="btn btn-primary"
+                onClick={() => setPhraseDrafts((current) => [...current, { phrase: '', year: '' }])}
+                style={{ alignSelf: 'flex-start', padding: '8px 14px' }}
+              >
+                + إضافة تحريقة
+              </button>
             </div>
             {insertStatus && (
               <p style={{ color: insertStatus.type === 'success' ? 'var(--success)' : 'var(--danger)', fontSize: '0.9rem', margin: 0, direction: 'rtl' }}>
@@ -330,19 +378,33 @@ export default function AdminPage() {
                     <span style={{ fontWeight: 700 }}>{user.user_id}</span>
                     <span style={{ color: 'var(--muted)', fontSize: '0.8rem' }}>{user.phrases.length} تحريقة</span>
                   </div>
-                  <ul style={{ listStyle: 'none', margin: 0, padding: '8px' }}>
-                    {user.phrases.map((phrase, pi) => (
-                      <li key={pi} style={{
-                        padding: '8px 12px',
-                        direction: 'rtl',
-                        borderBottom: pi < user.phrases.length - 1 ? '1px solid var(--border)' : 'none',
-                        fontSize: '0.9rem',
-                        color: 'var(--foreground)',
-                      }}>
-                        {phrase}
-                      </li>
-                    ))}
-                  </ul>
+                  {Object.entries(user.phrases.reduce((years, item) => {
+                    const category = item.year === null ? 'غير مصنفة' : String(item.year);
+                    years[category] ??= [];
+                    years[category].push(item.phrase);
+                    return years;
+                  }, {} as Record<string, string[]>))
+                    .sort(([left], [right]) => left === 'غير مصنفة' ? 1 : right === 'غير مصنفة' ? -1 : Number(right) - Number(left))
+                    .map(([year, phrases]) => (
+                    <div key={year} style={{ padding: '8px 12px' }}>
+                      <h3 style={{ margin: '0 0 4px', color: 'var(--accent2)', fontSize: '0.9rem', direction: 'rtl' }}>
+                        {year}
+                      </h3>
+                      <ul style={{ listStyle: 'none', margin: 0, padding: 0 }}>
+                        {phrases.map((phrase, pi) => (
+                          <li key={pi} style={{
+                            padding: '8px 0',
+                            direction: 'rtl',
+                            borderBottom: pi < phrases.length - 1 ? '1px solid var(--border)' : 'none',
+                            fontSize: '0.9rem',
+                            color: 'var(--foreground)',
+                          }}>
+                            {phrase}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  ))}
                 </div>
               ))}
             </div>

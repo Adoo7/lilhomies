@@ -1,0 +1,2 @@
+ALTER TABLE lilhomies_burns
+ADD COLUMN IF NOT EXISTS year INTEGER;

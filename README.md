@@ -1,5 +1,12 @@
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
+## Categorizing phrases by year
+
+Before deploying the year categorization feature, run
+[`database/migrations/001_add_year_to_burns.sql`](./database/migrations/001_add_year_to_burns.sql)
+against the Postgres database. Existing phrases will have no year and appear as
+uncategorized until assigned; newly added phrases require an individual year.
+
 ## Getting Started
 
 First, run the development server:
